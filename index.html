@@ -25,9 +25,12 @@
   const path = params.get('path');
   const vault = params.get('vault');
   const file = params.get('file') || params.get('filepath');
+  const dailyDiary = params.get('daily_diary');
   let uri = '';
 
-  if (path) {
+  if (dailyDiary) {
+    uri = 'obsidian://open?vault=' + encodeURIComponent('labart-Apr 2026') + '&file=' + encodeURIComponent('_Isaac/Daily Diary/' + dailyDiary + ' - Daily Diary.md');
+  } else if (path) {
     uri = 'obsidian://open?path=' + encodeURIComponent(path);
   } else if (vault && file) {
     uri = 'obsidian://open?vault=' + encodeURIComponent(vault) + '&file=' + encodeURIComponent(file);
