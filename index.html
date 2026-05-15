@@ -10,40 +10,52 @@
     code { background: #f3f3f3; padding: 0.12rem 0.25rem; border-radius: 4px; word-break: break-all; }
     a.button { display: inline-block; margin-top: 1rem; padding: 0.7rem 1rem; border-radius: 8px; background: #5b4bdb; color: white; text-decoration: none; font-weight: 650; }
     .muted { color: #666; font-size: 0.95rem; }
+    .warning { color: #8a4b00; }
   </style>
 </head>
 <body>
   <h1>Open in Obsidian</h1>
   <p id="status">Preparing link…</p>
   <p><a id="open" class="button" href="#">Open in Obsidian</a></p>
-  <p class="muted">This page is a thin HTTPS wrapper for Telegram. It redirects your browser to Obsidian using the local path in the URL. It stores nothing.</p>
+  <p class="muted">This page is a thin HTTPS wrapper for Telegram. It redirects your browser to Obsidian using an explicit vault/file or absolute path. It stores nothing.</p>
   <p class="muted">Target: <code id="target"></code></p>
 
 <script>
 (function () {
-  const params = new URLSearchParams(window.location.search);
-  const path = params.get('path');
-  const vault = params.get('vault');
-  const file = params.get('file') || params.get('filepath');
-  const dailyDiary = params.get('daily_diary');
-  let uri = '';
+  const DEFAULT_VAULT = 'labart-Apr 2026';
 
-  if (dailyDiary) {
-    uri = 'obsidian://open?vault=' + encodeURIComponent('labart-Apr 2026') + '&file=' + encodeURIComponent('_Isaac/Daily Diary/' + dailyDiary + ' - Daily Diary.md');
-  } else if (path) {
-    uri = 'obsidian://open?path=' + encodeURIComponent(path);
-  } else if (vault && file) {
-    uri = 'obsidian://open?vault=' + encodeURIComponent(vault) + '&file=' + encodeURIComponent(file);
-  } else if (file) {
-    uri = 'obsidian://open?file=' + encodeURIComponent(file);
+  function buildObsidianUri(params) {
+    const path = params.get('path');
+    const vault = params.get('vault');
+    const file = params.get('file') || params.get('filepath');
+    const dailyDiary = params.get('daily_diary');
+
+    if (dailyDiary) {
+      return 'obsidian://open?vault=' + encodeURIComponent(DEFAULT_VAULT) + '&file=' + encodeURIComponent('_Isaac/Daily Diary/' + dailyDiary + ' - Daily Diary.md');
+    }
+
+    if (path) {
+      return 'obsidian://open?path=' + encodeURIComponent(path);
+    }
+
+    if (vault && file) {
+      return 'obsidian://open?vault=' + encodeURIComponent(vault) + '&file=' + encodeURIComponent(file);
+    }
+
+    // Deliberately reject file-only links. They are ambiguous in Obsidian and
+    // can open the wrong note when names collide or a previous note is active.
+    return '';
   }
 
+  const params = new URLSearchParams(window.location.search);
+  const uri = buildObsidianUri(params);
   const status = document.getElementById('status');
   const open = document.getElementById('open');
   const target = document.getElementById('target');
 
   if (!uri) {
-    status.textContent = 'Missing path or vault/file parameters.';
+    status.textContent = 'Missing explicit path or vault/file parameters. This wrapper no longer opens ambiguous file-only links.';
+    status.className = 'warning';
     open.style.display = 'none';
     return;
   }
